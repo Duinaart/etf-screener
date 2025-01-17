@@ -124,26 +124,23 @@ def create_filter_row(number, label):
 def main():
     if 'filters_initialized' not in st.session_state:
         st.session_state.filters_initialized = True
-        st.session_state.asset_type_select = 'Equity'  # Set default to Equity
-        st.session_state.category_type_select = None
-        st.session_state.subdetail_select = None
+        st.session_state.super_region_select = None
+        st.session_state.region_group_select = None
+        st.session_state.specific_region_select = None
         st.session_state.currency_select = None
         st.session_state.dividend_policy_select = None
         st.session_state.issuer_select = None
+        st.session_state.equity_category = None
 
     st.title("ETF Screener")
     
     try:
         df = pd.read_csv('sample_df.csv')
-        # Rename columns after loading
         df = df.rename(columns={
             'asset_type': 'type',
-            'category_type': 'category',
-            'category_subdetail': 'sub_category',
             'fund_dividend_policy': 'dividend_policy'
         })
         
-        # Sort the DataFrame
         df = df.sort_values(
             by=['market_cap', 'ongoing_charge_tercile'],
             ascending=[False, True]
@@ -155,14 +152,14 @@ def main():
         filter_col, data_col = st.columns([1, 3])
 
         with filter_col:
-            # Clear all filters button
             if st.button('Clear Filters', key='clear_filters'):
-                st.session_state.asset_type_select = 'Equity'  # Reset to Equity
-                st.session_state.category_type_select = None
-                st.session_state.subdetail_select = None
+                st.session_state.super_region_select = None
+                st.session_state.region_group_select = None
+                st.session_state.specific_region_select = None
                 st.session_state.currency_select = None
                 st.session_state.dividend_policy_select = None
                 st.session_state.issuer_select = None
+                st.session_state.equity_category = None
                 st.rerun()
 
             # Type filter
@@ -178,84 +175,122 @@ def main():
                 )
             filtered_df = filtered_df[filtered_df['type'] == selected_type]
 
-            # Category filter
-            category_col = create_filter_row(2, "CATEGORY")
-            with category_col:
-                available_categories = clean_options(filtered_df['category'].unique())
-                selected_category = st.selectbox(
-                    "",
-                    options=available_categories,
-                    index=None,
-                    label_visibility="collapsed",
-                    key="category_type_select"
-                )
-            if selected_category:
-                filtered_df = filtered_df[filtered_df['category'] == selected_category]
+            # If Equity is selected, show Theme/Region selector
+            if selected_type == 'Equity':
+                category_col = create_filter_row(2, "CATEGORY")
+                with category_col:
+                    selected_category = st.selectbox(
+                        "",
+                        options=['Select Category...', 'Theme', 'Region'],
+                        index=0,
+                        label_visibility="collapsed",
+                        key="equity_category"
+                    )
 
-            # Sub Category filter
-            subdetail_col = create_filter_row(3, "SUB CATEGORY")
-            with subdetail_col:
-                if selected_category:
-                    available_sub_categories = clean_options(filtered_df['sub_category'].unique())
-                    selected_sub_category = st.selectbox(
-                        "",
-                        options=available_sub_categories,
-                        index=None,
-                        label_visibility="collapsed",
-                        key="subdetail_select"
-                    )
-                else:
-                    st.selectbox(
-                        "",
-                        options=[],
-                        label_visibility="collapsed",
-                        disabled=True,
-                        key="subdetail_select_disabled"
-                    )
-                    selected_sub_category = None
-            if selected_sub_category:
-                filtered_df = filtered_df[filtered_df['sub_category'] == selected_sub_category]
+                if selected_category == 'Theme':
+                    # Theme selector
+                    theme_col = create_filter_row(3, "THEME")
+                    with theme_col:
+                        available_themes = clean_options(filtered_df[filtered_df['region_group'].isna()]['fund_category'].unique())
+                        selected_theme = st.selectbox(
+                            "",
+                            options=['Select Theme...'] + list(available_themes),
+                            index=0,
+                            label_visibility="collapsed",
+                            key="theme_select"
+                        )
+                    if selected_theme and selected_theme != 'Select Theme...':
+                        filtered_df = filtered_df[filtered_df['fund_category'] == selected_theme]
+
+                elif selected_category == 'Region':
+                    # Super Region filter
+                    region_col = create_filter_row(3, "REGION")
+                    with region_col:
+                        available_super_regions = clean_options(filtered_df['super_region'].unique())
+                        selected_super_region = st.selectbox(
+                            "",
+                            options=['Select Region...'] + available_super_regions,
+                            index=0,
+                            label_visibility="collapsed",
+                            key="super_region_select"
+                        )
+                    
+                    if selected_super_region and selected_super_region != 'Select Region...':
+                        filtered_df = filtered_df[filtered_df['super_region'] == selected_super_region]
+                        
+                        # Region Group filter
+                        region_group_col = create_filter_row(4, "REGION GROUP")
+                        with region_group_col:
+                            available_region_groups = clean_options(filtered_df['region_group'].unique())
+                            selected_region_group = st.selectbox(
+                                "",
+                                options=['All Groups'] + available_region_groups,
+                                index=0,
+                                label_visibility="collapsed",
+                                key="region_group_select"
+                            )
+                        
+                        if selected_region_group and selected_region_group != 'All Groups':
+                            filtered_df = filtered_df[filtered_df['region_group'] == selected_region_group]
+                            
+                            # Specific Region filter
+                            specific_region_col = create_filter_row(5, "SPECIFIC REGION")
+                            with specific_region_col:
+                                available_specific_regions = clean_options(filtered_df['fund_category'].unique())
+                                selected_specific_region = st.selectbox(
+                                    "",
+                                    options=['All Regions'] + available_specific_regions,
+                                    index=0,
+                                    label_visibility="collapsed",
+                                    key="specific_region_select"
+                                )
+                            
+                            if selected_specific_region and selected_specific_region != 'All Regions':
+                                filtered_df = filtered_df[filtered_df['fund_category'] == selected_specific_region]
+
+            # Continue with other filters (adjust numbers based on previous selections)
+            next_filter_num = 6 if selected_type == 'Equity' and selected_category == 'Region' else 4
 
             # Currency filter
-            currency_col = create_filter_row(4, "CURRENCY")
+            currency_col = create_filter_row(next_filter_num, "CURRENCY")
             with currency_col:
                 available_currencies = clean_options(filtered_df['currency'].unique())
                 selected_currency = st.selectbox(
                     "",
-                    options=available_currencies,
-                    index=None,
+                    options=['Select Currency...'] + available_currencies,
+                    index=0,
                     label_visibility="collapsed",
                     key="currency_select"
                 )
-            if selected_currency:
+            if selected_currency and selected_currency != 'Select Currency...':
                 filtered_df = filtered_df[filtered_df['currency'] == selected_currency]
 
             # Dividend Policy filter
-            dividend_col = create_filter_row(5, "DIVIDEND POLICY")
+            dividend_col = create_filter_row(next_filter_num + 1, "DIVIDEND POLICY")
             with dividend_col:
                 available_dividend_policies = clean_options(filtered_df['dividend_policy'].unique())
                 selected_dividend_policy = st.selectbox(
                     "",
-                    options=available_dividend_policies,
-                    index=None,
+                    options=['Select Policy...'] + available_dividend_policies,
+                    index=0,
                     label_visibility="collapsed",
                     key="dividend_policy_select"
                 )
-            if selected_dividend_policy:
+            if selected_dividend_policy and selected_dividend_policy != 'Select Policy...':
                 filtered_df = filtered_df[filtered_df['dividend_policy'] == selected_dividend_policy]
 
             # Fund Issuer filter
-            issuer_col = create_filter_row(6, "FUND ISSUER")
+            issuer_col = create_filter_row(next_filter_num + 2, "FUND ISSUER")
             with issuer_col:
                 available_issuers = clean_options(filtered_df['issuer'].unique())
                 selected_issuer = st.selectbox(
                     "",
-                    options=available_issuers,
-                    index=None,
+                    options=['Select Issuer...'] + available_issuers,
+                    index=0,
                     label_visibility="collapsed",
                     key="issuer_select"
                 )
-            if selected_issuer:
+            if selected_issuer and selected_issuer != 'Select Issuer...':
                 filtered_df = filtered_df[filtered_df['issuer'] == selected_issuer]
 
             st.markdown(
@@ -277,11 +312,11 @@ def main():
                     "ticker": st.column_config.TextColumn("Ticker", width=100),
                     "currency": st.column_config.TextColumn("Currency", width=100),
                     "type": st.column_config.TextColumn("Type", width=120),
-                    "category": st.column_config.TextColumn("Category", width=120),
-                    "sub_category": st.column_config.TextColumn("Sub Category", width=150),
+                    "super_region": st.column_config.TextColumn("Region", width=120),
+                    "region_group": st.column_config.TextColumn("Region Group", width=150),
+                    "fund_category": st.column_config.TextColumn("Category", width=150),
                     "dividend_policy": st.column_config.TextColumn("Dividend Policy", width=150),
                     "fund_benchmark": st.column_config.TextColumn("Benchmark", width=300),
-                    "fund_category": st.column_config.TextColumn("Fund Category", width=150),
                     "fund_domicile": st.column_config.TextColumn("Domicile", width=100),
                     "market_cap": st.column_config.NumberColumn("Market Cap", width=120),
                     "ongoing_charge_tercile": st.column_config.NumberColumn("Ongoing Charge Tercile", width=100),
@@ -291,6 +326,7 @@ def main():
 
     except Exception as e:
         st.error(f"Error loading CSV file: {e}")
+
 
 
 if __name__ == "__main__":
