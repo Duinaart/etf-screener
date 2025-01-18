@@ -70,6 +70,7 @@ def create_filter_row(number, label):
 def main():
     st.title("ETF Screener")
 
+
     try:
         # Load and preprocess the DataFrame
         df = pd.read_csv('sample_df.csv')
@@ -176,6 +177,26 @@ def main():
                 """,
                 unsafe_allow_html=True
             )
+        
+            column_order = [
+                'ticker',
+                'type',
+                'category_type',
+                'category_subdetail',
+                'super_region',
+                'region_group',
+                'currency',
+                'dividend_policy',
+                'issuer',
+                'fund_benchmark',
+                'market_cap',
+                'fund_domicile',
+                ]
+
+        # Reorder the columns
+        filtered_df = filtered_df[column_order]
+
+
 
         with data_col:
             # Display the filtered DataFrame
