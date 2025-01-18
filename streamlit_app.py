@@ -9,11 +9,11 @@ st.set_page_config(layout="wide", page_title="ETF Screener", initial_sidebar_sta
 # Custom CSS for styling
 st.markdown("""
     <style>
-    /* Dark theme */
-    .stApp {
-        background-color: #1E1E1E;
-        color: white;
-    }
+#     /* Dark theme */
+#     .stApp {
+#         background-color: #1E1E1E;
+#         color: white;
+#     }
     
     /* Filter container */
     .filter-container {
@@ -44,53 +44,53 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
 
-    /* Dropdown styling */
-    .stSelectbox [data-baseweb="select"], 
-    .stMultiSelect [data-baseweb="select"] {
-        background-color: transparent !important;
-        border: none !important;
-        max-width: 200px !important;
-    }
+#     /* Dropdown styling */
+#     .stSelectbox [data-baseweb="select"], 
+#     .stMultiSelect [data-baseweb="select"] {
+#         background-color: transparent !important;
+#         border: none !important;
+#         max-width: 200px !important;
+#     }
 
-    /* Remove padding from containers */
-    .element-container {
-        margin: 0 !important;
-    }
-    .stSelectbox {
-        margin: 0 !important;
-    }
-    .stMultiSelect {
-        margin: 0 !important;
-    }
+#     /* Remove padding from containers */
+#     .element-container {
+#         margin: 0 !important;
+#     }
+#     .stSelectbox {
+#         margin: 0 !important;
+#     }
+#     .stMultiSelect {
+#         margin: 0 !important;
+#     }
     
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+#     /* Hide Streamlit branding */
+#     #MainMenu {visibility: hidden;}
+#     footer {visibility: hidden;}
+#     header {visibility: hidden;}
 
-    /* Title styling */
-    h1 {
-        font-size: 32px;
-        font-weight: bold;
-        margin-bottom: 24px;
-        color: white;
-    }
+#     /* Title styling */
+#     h1 {
+#         font-size: 32px;
+#         font-weight: bold;
+#         margin-bottom: 24px;
+#         color: white;
+#     }
 
-    /* Clear Filters button */
-    .stButton button {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: #888;
-        border: none;
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-size: 13px;
-        margin-bottom: 16px;
-    }
+#     /* Clear Filters button */
+#     .stButton button {
+#         background-color: rgba(255, 255, 255, 0.1);
+#         color: #888;
+#         border: none;
+#         border-radius: 6px;
+#         padding: 8px 16px;
+#         font-size: 13px;
+#         margin-bottom: 16px;
+#     }
     
-    .stButton button:hover {
-        background-color: rgba(255, 255, 255, 0.15);
-        color: white;
-    }
+#     .stButton button:hover {
+#         background-color: rgba(255, 255, 255, 0.15);
+#         color: white;
+#     }
 
     /* ETF count text */
     .etf-count {
@@ -151,7 +151,7 @@ def main():
 
         with filter_col:
             # Clear Filters Button
-            if st.button('Clear Filters', key='clear_filters'):
+            if st.button('Clear Filters'):
                 st.session_state.super_region_select = None
                 st.session_state.region_group_select = None
                 st.session_state.specific_region_select = None
@@ -159,7 +159,7 @@ def main():
                 st.session_state.dividend_policy_select = None
                 st.session_state.issuer_select = None
                 st.session_state.equity_category = None
-                st.experimental_rerun()
+                st.rerun()
 
             # Asset Type (Preselect Equity)
             type_col = create_filter_row(1, "TYPE")
@@ -170,7 +170,6 @@ def main():
                     options=available_types,
                     index=available_types.index('Equity') if 'Equity' in available_types else 0,
                     label_visibility="collapsed",
-                    key="asset_type_select"
                 )
             filtered_df = filtered_df[filtered_df['type'] == selected_type]
 
@@ -178,12 +177,12 @@ def main():
             if selected_type == 'Equity':
                 category_col = create_filter_row(2, "CATEGORY")
                 with category_col:
+                    clean_options(df['category_type'].unique())
                     selected_category = st.selectbox(
-                        "",
+                        label="",
                         options=['Select Category...', 'Theme', 'Region', 'Sector'],
                         index=0,
                         label_visibility="collapsed",
-                        key="equity_category"
                     )
 
                 if selected_category == 'Sector':
@@ -195,12 +194,11 @@ def main():
                         )
                         selected_sector = st.selectbox(
                             "",
-                            options=['Select Sector...'] + available_sectors,
-                            index=0,
+                            options= available_sectors,
+                            index=None,
                             label_visibility="collapsed",
-                            key="sector_select"
                         )
-                    if selected_sector and selected_sector != 'Select Sector...':
+                    if selected_sector:
                         filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_sector]
 
                 elif selected_category == 'Theme':
@@ -212,12 +210,11 @@ def main():
                         )
                         selected_theme = st.selectbox(
                             "",
-                            options=['Select Theme...'] + available_themes,
-                            index=0,
+                            options=available_themes,
+                            index=None,
                             label_visibility="collapsed",
-                            key="theme_select"
                         )
-                    if selected_theme and selected_theme != 'Select Theme...':
+                    if selected_theme:
                         filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_theme]
 
                 elif selected_category == 'Region':
@@ -230,12 +227,11 @@ def main():
                 available_currencies = clean_options(filtered_df['currency'].unique())
                 selected_currency = st.selectbox(
                     "",
-                    options=['Select Currency...'] + available_currencies,
-                    index=0,
+                    options=available_currencies,
+                    index=None,
                     label_visibility="collapsed",
-                    key="currency_select"
                 )
-            if selected_currency and selected_currency != 'Select Currency...':
+            if selected_currency:
                 filtered_df = filtered_df[filtered_df['currency'] == selected_currency]
 
             # Dividend Policy Filter
@@ -244,12 +240,11 @@ def main():
                 available_dividend_policies = clean_options(filtered_df['dividend_policy'].unique())
                 selected_dividend_policy = st.selectbox(
                     "",
-                    options=['Select Policy...'] + available_dividend_policies,
-                    index=0,
+                    options=available_dividend_policies,
+                    index=None,
                     label_visibility="collapsed",
-                    key="dividend_policy_select"
                 )
-            if selected_dividend_policy and selected_dividend_policy != 'Select Policy...':
+            if selected_dividend_policy:
                 filtered_df = filtered_df[filtered_df['dividend_policy'] == selected_dividend_policy]
 
             # Fund Issuer Filter
@@ -258,12 +253,12 @@ def main():
                 available_issuers = clean_options(filtered_df['issuer'].unique())
                 selected_issuer = st.selectbox(
                     "",
-                    options=['Select Issuer...'] + available_issuers,
-                    index=0,
+                    options=available_issuers,
+                    index=None,
                     label_visibility="collapsed",
-                    key="issuer_select"
                 )
-            if selected_issuer and selected_issuer != 'Select Issuer...':
+
+            if selected_issuer:
                 filtered_df = filtered_df[filtered_df['issuer'] == selected_issuer]
 
             st.markdown(
@@ -290,20 +285,17 @@ def main():
 
 def apply_region_filters(filtered_df):
     """Apply progressive region filtering."""
-    # Ensure only regions are considered
-    filtered_df = filtered_df[filtered_df['category_type'] == 'Region']
-
     region_col = create_filter_row(3, "REGION")
     with region_col:
         available_super_regions = clean_options(filtered_df['super_region'].unique())
         selected_super_region = st.selectbox(
             "",
-            options=['Select Region...'] + available_super_regions,
-            index=0,
+            options=available_super_regions,
+            index=None,
             label_visibility="collapsed",
-            key="super_region_select"
         )
-    if selected_super_region and selected_super_region != 'Select Region...':
+
+    if selected_super_region:
         filtered_df = filtered_df[filtered_df['super_region'] == selected_super_region]
 
         region_group_col = create_filter_row(4, "REGION GROUP")
@@ -311,12 +303,12 @@ def apply_region_filters(filtered_df):
             available_region_groups = clean_options(filtered_df['region_group'].unique())
             selected_region_group = st.selectbox(
                 "",
-                options=['Select Region Group...'] + available_region_groups,
-                index=0,
+                options=available_region_groups,
+                index=None,
                 label_visibility="collapsed",
-                key="region_group_select"
             )
-        if selected_region_group and selected_region_group != 'Select Region Group...':
+
+        if selected_region_group:
             filtered_df = filtered_df[filtered_df['region_group'] == selected_region_group]
 
             specific_region_col = create_filter_row(5, "SPECIFIC REGION")
@@ -324,12 +316,12 @@ def apply_region_filters(filtered_df):
                 available_specific_regions = clean_options(filtered_df['category_subdetail'].unique())
                 selected_specific_region = st.selectbox(
                     "",
-                    options=['Select Specific Region...'] + available_specific_regions,
-                    index=0,
+                    options=available_specific_regions,
+                    index=None,
                     label_visibility="collapsed",
-                    key="specific_region_select"
                 )
-            if selected_specific_region and selected_specific_region != 'Select Specific Region...':
+
+            if selected_specific_region:
                 filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_specific_region]
 
     return filtered_df
