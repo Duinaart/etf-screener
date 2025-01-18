@@ -9,12 +9,6 @@ st.set_page_config(layout="wide", page_title="ETF Screener", initial_sidebar_sta
 # Custom CSS for styling
 st.markdown("""
     <style>
-#     /* Dark theme */
-#     .stApp {
-#         background-color: #1E1E1E;
-#         color: white;
-#     }
-    
     /* Filter container */
     .filter-container {
         display: flex;
@@ -43,54 +37,6 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-
-#     /* Dropdown styling */
-#     .stSelectbox [data-baseweb="select"], 
-#     .stMultiSelect [data-baseweb="select"] {
-#         background-color: transparent !important;
-#         border: none !important;
-#         max-width: 200px !important;
-#     }
-
-#     /* Remove padding from containers */
-#     .element-container {
-#         margin: 0 !important;
-#     }
-#     .stSelectbox {
-#         margin: 0 !important;
-#     }
-#     .stMultiSelect {
-#         margin: 0 !important;
-#     }
-    
-#     /* Hide Streamlit branding */
-#     #MainMenu {visibility: hidden;}
-#     footer {visibility: hidden;}
-#     header {visibility: hidden;}
-
-#     /* Title styling */
-#     h1 {
-#         font-size: 32px;
-#         font-weight: bold;
-#         margin-bottom: 24px;
-#         color: white;
-#     }
-
-#     /* Clear Filters button */
-#     .stButton button {
-#         background-color: rgba(255, 255, 255, 0.1);
-#         color: #888;
-#         border: none;
-#         border-radius: 6px;
-#         padding: 8px 16px;
-#         font-size: 13px;
-#         margin-bottom: 16px;
-#     }
-    
-#     .stButton button:hover {
-#         background-color: rgba(255, 255, 255, 0.15);
-#         color: white;
-#     }
 
     /* ETF count text */
     .etf-count {
