@@ -71,13 +71,15 @@ def main():
     if 'filters_initialized' not in st.session_state:
         # Initialize session state for filters
         st.session_state.filters_initialized = True
+        st.session_state.type_select = 'Equity'
+        st.session_state.category_select = None
         st.session_state.super_region_select = None
         st.session_state.region_group_select = None
         st.session_state.specific_region_select = None
         st.session_state.currency_select = None
         st.session_state.dividend_policy_select = None
         st.session_state.issuer_select = None
-        st.session_state.equity_category = None
+        st.session_state.subcategory_select = None
 
     st.title("ETF Screener")
 
@@ -98,74 +100,66 @@ def main():
         with filter_col:
             # Clear Filters Button
             if st.button('Clear Filters'):
+                st.session_state.type_select = 'Equity'
+                st.session_state.category_select = None
                 st.session_state.super_region_select = None
                 st.session_state.region_group_select = None
                 st.session_state.specific_region_select = None
                 st.session_state.currency_select = None
                 st.session_state.dividend_policy_select = None
                 st.session_state.issuer_select = None
-                st.session_state.equity_category = None
+                st.session_state.subcategory_select = None
                 st.rerun()
 
-            # Asset Type (Preselect Equity)
+            # Asset Type
             type_col = create_filter_row(1, "TYPE")
             with type_col:
                 available_types = clean_options(df['type'].unique())
                 selected_type = st.selectbox(
                     "",
                     options=available_types,
-                    index=available_types.index('Equity') if 'Equity' in available_types else 0,
+                    index=available_types.index(st.session_state.type_select) if st.session_state.type_select in available_types else 0,
                     label_visibility="collapsed",
                 )
+                if selected_type != st.session_state.type_select:
+                    st.session_state.type_select = selected_type
+                    st.session_state.category_select = None
+                    st.session_state.super_region_select = None
+                    st.session_state.region_group_select = None
+                    st.session_state.specific_region_select = None
+                    st.session_state.subcategory_select = None
+                    
             filtered_df = filtered_df[filtered_df['type'] == selected_type]
 
-            # Progressive Filters for Equity Type
-            if selected_type == 'Equity':
-                category_col = create_filter_row(2, "CATEGORY")
-                with category_col:
-                    clean_options(df['category_type'].unique())
-                    selected_category = st.selectbox(
-                        label="",
-                        options=['Select Category...', 'Theme', 'Region', 'Sector'],
-                        index=0,
-                        label_visibility="collapsed",
-                    )
 
-                if selected_category == 'Sector':
-                    # Filter for Sector
-                    sector_col = create_filter_row(3, "SECTOR")
-                    with sector_col:
-                        available_sectors = clean_options(
-                            filtered_df[filtered_df['category_type'] == 'Sector']['category_subdetail'].unique()
-                        )
-                        selected_sector = st.selectbox(
-                            "",
-                            options= available_sectors,
-                            index=None,
-                            label_visibility="collapsed",
-                        )
-                    if selected_sector:
-                        filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_sector]
+            # Category Filter
+            category_col = create_filter_row(2, "CATEGORY")
+            with category_col:
+                available_categories = ['Select Category...'] + clean_options(filtered_df['category_type'].unique())
+                selected_category = st.selectbox(
+                   label="",
+                   options=available_categories,
+                   index=available_categories.index(st.session_state.category_select) if st.session_state.category_select in available_categories else 0,
+                   label_visibility="collapsed",
+                )
+                if selected_category != st.session_state.category_select:
+                     st.session_state.category_select = selected_category
+                     st.session_state.super_region_select = None
+                     st.session_state.region_group_select = None
+                     st.session_state.specific_region_select = None
+                     st.session_state.subcategory_select = None
+                     
+            if selected_category != 'Select Category...':
+                 filtered_df = filtered_df[filtered_df['category_type'] == selected_category]
 
-                elif selected_category == 'Theme':
-                    # Filter for Theme
-                    theme_col = create_filter_row(3, "THEME")
-                    with theme_col:
-                        available_themes = clean_options(
-                            filtered_df[filtered_df['category_type'] == 'Theme']['category_subdetail'].unique()
-                        )
-                        selected_theme = st.selectbox(
-                            "",
-                            options=available_themes,
-                            index=None,
-                            label_visibility="collapsed",
-                        )
-                    if selected_theme:
-                        filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_theme]
+                 if selected_category == 'Sector':
+                    filtered_df = apply_sub_category_filter(filtered_df, 'SECTOR', 3)
+                 elif selected_category == 'Theme':
+                    filtered_df = apply_sub_category_filter(filtered_df, 'THEME', 3)
+                 elif selected_category == 'Region':
+                     filtered_df = apply_region_filters(filtered_df)
+            
 
-                elif selected_category == 'Region':
-                    # Progressive Filters for Regions
-                    filtered_df = apply_region_filters(filtered_df)
 
             # Currency Filter
             currency_col = create_filter_row(6, "CURRENCY")
@@ -174,9 +168,11 @@ def main():
                 selected_currency = st.selectbox(
                     "",
                     options=available_currencies,
-                    index=None,
+                    index=available_currencies.index(st.session_state.currency_select) if st.session_state.currency_select in available_currencies else None,
                     label_visibility="collapsed",
                 )
+                if selected_currency != st.session_state.currency_select:
+                     st.session_state.currency_select = selected_currency
             if selected_currency:
                 filtered_df = filtered_df[filtered_df['currency'] == selected_currency]
 
@@ -187,9 +183,11 @@ def main():
                 selected_dividend_policy = st.selectbox(
                     "",
                     options=available_dividend_policies,
-                    index=None,
+                    index=available_dividend_policies.index(st.session_state.dividend_policy_select) if st.session_state.dividend_policy_select in available_dividend_policies else None,
                     label_visibility="collapsed",
                 )
+                if selected_dividend_policy != st.session_state.dividend_policy_select:
+                     st.session_state.dividend_policy_select = selected_dividend_policy
             if selected_dividend_policy:
                 filtered_df = filtered_df[filtered_df['dividend_policy'] == selected_dividend_policy]
 
@@ -200,10 +198,11 @@ def main():
                 selected_issuer = st.selectbox(
                     "",
                     options=available_issuers,
-                    index=None,
+                    index=available_issuers.index(st.session_state.issuer_select) if st.session_state.issuer_select in available_issuers else None,
                     label_visibility="collapsed",
                 )
-
+                if selected_issuer != st.session_state.issuer_select:
+                     st.session_state.issuer_select = selected_issuer
             if selected_issuer:
                 filtered_df = filtered_df[filtered_df['issuer'] == selected_issuer]
 
@@ -228,6 +227,24 @@ def main():
     except Exception as e:
         st.error(f"Error loading data: {e}")
 
+def apply_sub_category_filter(filtered_df, label, number):
+    sub_category_col = create_filter_row(number, label)
+    with sub_category_col:
+        available_sub_categories = clean_options(
+            filtered_df['category_subdetail'].unique()
+        )
+        selected_sub_category = st.selectbox(
+            "",
+            options= available_sub_categories,
+            index=available_sub_categories.index(st.session_state.subcategory_select) if st.session_state.subcategory_select in available_sub_categories else None,
+            label_visibility="collapsed",
+        )
+        if selected_sub_category != st.session_state.subcategory_select:
+             st.session_state.subcategory_select = selected_sub_category
+
+    if selected_sub_category:
+         filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_sub_category]
+    return filtered_df
 
 def apply_region_filters(filtered_df):
     """Apply progressive region filtering."""
@@ -237,9 +254,13 @@ def apply_region_filters(filtered_df):
         selected_super_region = st.selectbox(
             "",
             options=available_super_regions,
-            index=None,
+            index=available_super_regions.index(st.session_state.super_region_select) if st.session_state.super_region_select in available_super_regions else None,
             label_visibility="collapsed",
         )
+        if selected_super_region != st.session_state.super_region_select:
+             st.session_state.super_region_select = selected_super_region
+             st.session_state.region_group_select = None
+             st.session_state.specific_region_select = None
 
     if selected_super_region:
         filtered_df = filtered_df[filtered_df['super_region'] == selected_super_region]
@@ -250,9 +271,12 @@ def apply_region_filters(filtered_df):
             selected_region_group = st.selectbox(
                 "",
                 options=available_region_groups,
-                index=None,
+                index=available_region_groups.index(st.session_state.region_group_select) if st.session_state.region_group_select in available_region_groups else None,
                 label_visibility="collapsed",
             )
+            if selected_region_group != st.session_state.region_group_select:
+                 st.session_state.region_group_select = selected_region_group
+                 st.session_state.specific_region_select = None
 
         if selected_region_group:
             filtered_df = filtered_df[filtered_df['region_group'] == selected_region_group]
@@ -263,9 +287,11 @@ def apply_region_filters(filtered_df):
                 selected_specific_region = st.selectbox(
                     "",
                     options=available_specific_regions,
-                    index=None,
+                    index=available_specific_regions.index(st.session_state.specific_region_select) if st.session_state.specific_region_select in available_specific_regions else None,
                     label_visibility="collapsed",
                 )
+                if selected_specific_region != st.session_state.specific_region_select:
+                     st.session_state.specific_region_select = selected_specific_region
 
             if selected_specific_region:
                 filtered_df = filtered_df[filtered_df['category_subdetail'] == selected_specific_region]
